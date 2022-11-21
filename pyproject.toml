@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "grott-async"
+version = "0.1.0"
+description = "Growatt async proxy server"
+authors = ["gihubDante <github@dante.tk>"]
+license = "MIT"
+readme = "README.rst"
+packages = [{include = "grott_async"}]
+
+[tool.poetry.dependencies]
+python = ">=3.7"
+#orjson = "^3.8.2"
+asyncio-mqtt = ">=0.14.0"
+libscrc = "^1.8.1"
+
+[tool.poetry.scripts]
+grott-proxy = 'grott_async.entry:async_proxy'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
