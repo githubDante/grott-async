@@ -2,7 +2,7 @@ import enum
 
 
 class Fault1(int, enum.Enum):
-
+    No_error  = 0
     Error_100 = 1
     Error_101 = 2
     Error_102 = 3
@@ -36,7 +36,7 @@ class Fault1(int, enum.Enum):
     AC_Frequency_Out_of_Range = 31
     Module_Too_Hot = 32
     # Custom error
-    Error_Undocummented = 0
+    Error_Undocummented = 99
 
     @classmethod
     def _missing_(cls, value: object):
@@ -44,7 +44,7 @@ class Fault1(int, enum.Enum):
 
 
 class Fault8(int, enum.Enum):
-
+    No_Error                    = 0x00000000
     Communication_Error         = 0x00000002  # 2
     StrReverse_or_StrShortage   = 0x00000008  # 8
     Model_Init_Fault            = 0x00000010  # 16
