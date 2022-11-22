@@ -287,7 +287,7 @@ class ProxyClient:
                     self.log.debug(json.dumps(extracted, indent=2))
                 if self.config.has_mqtt:
                     loop = asyncio.get_running_loop()
-                    task = loop.create_task(send_to_mqtt(extracted, self.config))
+                    task = loop.create_task(send_to_mqtt(extracted, self.config, self.log))
 
         self.log.debug(f'*** PACKET PROCESSED [{round((perf_counter() - _start_processing) * 1000, 3)}ms]***')
         # TODO: distribute the data to other plugins specified in the config after this point
