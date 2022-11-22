@@ -30,10 +30,13 @@ class GrottLogger:
         self._keep = keep
         self._log_file = fname
         self.level = getattr(logging, level.upper(), 20)
+        self._logger_name = None
         if logger_name:
             self.log = logging.getLogger(logger_name)
+            self._logger_name = logger_name
         else:
             self.log = logging.getLogger('grott')
+            self._logger_name = 'grott'
         self.ouput = output
         self.__setup()
 
@@ -52,4 +55,7 @@ class GrottLogger:
             handler = logging.StreamHandler(sys.stdout)
 
         handler.setFormatter(formatter)
-        self.log.addHandler(handler)
+        if len(self.log.handlers) == 0:
+            self.log.addHandler(handler)
+        else:
+            self.log.handlers[0] = handler
