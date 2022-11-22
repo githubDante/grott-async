@@ -67,7 +67,7 @@ class Fault8(int, enum.Enum):
     High_Temperature            = 0x80000000
 
     # Custom
-    Undocumented                = 0xdeadbeaf
+    Undocumented                = 0xdeadbeef
 
     @classmethod
     def _missing_(cls, value: object):
