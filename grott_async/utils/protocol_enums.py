@@ -35,6 +35,12 @@ class Fault1(int, enum.Enum):
     AC_Voltage_Out_of_Range = 30
     AC_Frequency_Out_of_Range = 31
     Module_Too_Hot = 32
+    # Custom error
+    Error_Undocummented = 0
+
+    @classmethod
+    def _missing_(cls, value: object):
+        return Fault1.Error_Undocummented
 
 
 class Fault8(int, enum.Enum):
@@ -59,3 +65,10 @@ class Fault8(int, enum.Enum):
     AC_Voltage_OutRange         = 0x20000000
     AC_Frequency_OutRange       = 0x40000000
     High_Temperature            = 0x80000000
+
+    # Custom
+    Undocumented                = 0xdeadbeaf
+
+    @classmethod
+    def _missing_(cls, value: object):
+        return Fault8.Undocumented
