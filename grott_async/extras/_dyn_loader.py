@@ -31,7 +31,7 @@ class GrottPluginLoader:
                 except Exception:
                     log.error(f'Loading failed for {mod_name}')
                     continue
-                log.info(f'Checking for plugins in {f.split(".py")}')
+                log.info(f'Checking for plugins in {mod_name}')
                 sync_plugins = [(x, y) for x, y in inspect.getmembers(mod) if isinstance(y, GrottProxySyncPlugin)]
                 async_plugins = [(x, y) for x, y in inspect.getmembers(mod) if isinstance(y, GrottProxyAsyncPlugin)]
                 log.info(f'Found: {len(sync_plugins) + len(async_plugins)} in {mod_name}')
