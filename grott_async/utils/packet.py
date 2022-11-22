@@ -7,6 +7,7 @@ from libscrc import modbus
 import struct
 from typing import List, Union
 import enum
+from .protocol_enums import Fault1, Fault8
 
 
 __DEBUG__ = True
@@ -29,6 +30,10 @@ class RegType:
     FLOAT = 'float'
     INT = 'num'
     BIT = 'bit'
+    FAULT_1 = 'fault_code'  # Inverter fault code Bit (&*1)  Page 58/65
+    """ Fault codes described as &*1 """
+    FAULT_8 = 'fault_bitcode'  # Inverter fault code and warning code (&*8) Page 60/65
+    """ Fault codes described as &*8 """
 
 
 class GrottRegister:
@@ -69,6 +74,10 @@ class GrottRegister:
             return round(val / self.divide, 3)
         if self.type == RegType.INT or self.type == RegType.TEXT:
             return val
+        if self.type == RegType.FAULT_1:
+            return Fault1(val).name
+        if self.type == RegType.FAULT_8:
+            return Fault8(val).name
         if self.type == RegType.BIT:
             return '{:016b}'.format(val) if isinstance(val, int) else '{:016b}'.format(0xdead)
 
