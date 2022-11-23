@@ -2,6 +2,9 @@ import enum
 
 
 class Fault1(int, enum.Enum):
+    """
+    Growatt error codes described in `&*1`
+    """
     No_error  = 0
     Error_100 = 1
     Error_101 = 2
@@ -44,6 +47,9 @@ class Fault1(int, enum.Enum):
 
 
 class Fault8(int, enum.Enum):
+    """
+    Growatt error codes descibed in `&*8`
+    """
     No_Error                    = 0x00000000
     Communication_Error         = 0x00000002  # 2
     StrReverse_or_StrShortage   = 0x00000008  # 8
@@ -72,3 +78,26 @@ class Fault8(int, enum.Enum):
     @classmethod
     def _missing_(cls, value: object):
         return Fault8.Undocumented
+
+
+class Warn8(int, enum.Enum):
+    """
+    Growatt warning codes described in `&*8`
+    """
+
+    No_Warn                     = 0x0000
+    Fan_Warn                    = 0x0001
+    String_Comm_Abnormal        = 0x0002
+    String_PID_Conf_Warn        = 0x0004
+    DSP_COM_Unmatch             = 0x0010
+    SPD_Abnormal                = 0x0040
+    GND_N_Conn_Abnormal         = 0x0080
+    PV1_PV2_Short_Circuit       = 0x0100
+    PV1_PV2_Boost_Drv_Broken    = 0x0200
+
+    Undocumented                = 0xffff
+
+
+    @classmethod
+    def _missing_(cls, value: object):
+        return Warn8.Undocumented

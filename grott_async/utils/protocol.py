@@ -104,7 +104,7 @@ map_04_125 = {
         104: GrottRegister(104, RegType.FLOAT, 'derating_mode', length=1, divide=1),
         105: GrottRegister(105, RegType.FAULT_1, 'inverter_fault_code', length=1, divide=1),
         106: GrottRegister(106, RegType.FAULT_8, 'inverter_fault_bit', length=2, divide=1),
-        110: GrottRegister(110, RegType.INT, 'inverter_warning_bit', length=2, divide=1),
+        110: GrottRegister(110, RegType.WARN_8, 'inverter_warning_bit', length=2, divide=1),
 
         125: GrottRegister(125, RegType.FLOAT, 'pv1_pid_voltage', length=1, divide=10),
         126: GrottRegister(126, RegType.FLOAT, 'pv1_pid_current', length=1, divide=10),
