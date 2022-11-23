@@ -235,7 +235,6 @@ class ProxyClient:
                 self._setup_own_logger()
         if self.inverter_serial == '':
             self.inverter_serial = packet.inverter_serial.decode()
-        self.log.debug(packet)
         if packet.packet_type in [GrottPacketType.INVERTER_REPORT, GrottPacketType.LIVE_DATA,
                                   GrottPacketType.BUFFERED_DATA] \
                 and packet.data_length > 100:
