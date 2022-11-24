@@ -37,16 +37,16 @@ Build on top of asyncio.
 
         class MyPlugin(GrottProxySyncPlugin):
 
-        def __init__(self, x, y, z):
-            self.x = x
-            self.y = y
-            self.z = z
+            def __init__(self, x, y, z):
+                self.x = x
+                self.y = y
+                self.z = z
 
-        def show_data(self, data: dict):
-            print(data)
+            def show_data(self, data: dict):
+                print(data)
 
-        def data(self, packet: bytes, parsed_data: dict, log: logging.Logger):
-            self.show_data(parsed_data)
+            def data(self, packet: bytes, parsed_data: dict, log: logging.Logger):
+                self.show_data(parsed_data)
 
         cool_plugin_name = MyPlugin(1, 2, 3)
 
