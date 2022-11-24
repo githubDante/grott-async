@@ -13,11 +13,12 @@ except ImportError:
 from time import perf_counter
 from asyncio.streams import StreamReader, StreamWriter
 from asyncio.base_events import Server
+from concurrent.futures import ThreadPoolExecutor
 from typing import Dict
 from .utils.logger import GrottLogger
 from .utils import (GrottProxyConfig, GrottDataExtractor, GrottPacketType, GrottRawPacket, RegType,
-                   map_03_125, map_03_45, map_04_45, map_04_125)
-from .extras import send_to_mqtt
+                    map_03_125, map_03_45, map_04_45, map_04_125)
+from .extras.mqtt import send_to_mqtt
 
 log = logging.getLogger('grott')
 
@@ -215,6 +216,10 @@ class ProxyClient:
         """ To be implemented
             Async in case that the processing needs async code
         """
+        _start_processing = perf_counter()
+        packet = GrottRawPacket(data)
+        self.log.debug(packet)
+        self.log.debug(f'*** SRV PACKET PROCESSED [{round((perf_counter() - _start_processing) * 1000, 3)}ms]***')
         return
 
     async def process_client_data(self, data: bytes) -> None:
@@ -284,10 +289,16 @@ class ProxyClient:
                     self.log.debug(json.dumps(extracted, option=json.OPT_INDENT_2))
                 else:
                     self.log.debug(json.dumps(extracted, indent=2))
+                loop = asyncio.get_running_loop()
+
                 if self.config.has_mqtt:
-                    loop = asyncio.get_running_loop()
                     task = loop.create_task(send_to_mqtt(extracted, self.config, self.log))
 
+                """ Distribute the data to all plugins """
+                for plugin in self.config.plugins.sync_plugins.values():
+                    loop.run_in_executor(None, plugin.data, packet.decrypted_packet(), extracted, self.log)
+                for plugin in self.config.plugins.async_plugins.values():
+                    loop.create_task(plugin.data(packet.decrypted_packet(), extracted, self.log))
         self.log.debug(f'*** PACKET PROCESSED [{round((perf_counter() - _start_processing) * 1000, 3)}ms]***')
         # TODO: distribute the data to other plugins specified in the config after this point
         return
