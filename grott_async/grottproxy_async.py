@@ -149,7 +149,12 @@ class ProxyClient:
 
     async def client_read(self):
         while True:
-            data = await self.reader.read(self.__max_datalen)
+            try:
+                data = await self.reader.read(self.__max_datalen)
+            except ConnectionResetError:
+                self.log.error('[Client] connection reset...')
+                await self.cleanup(client=True)
+                return
             if data == b'':
                 break
             try:
@@ -168,7 +173,12 @@ class ProxyClient:
 
     async def server_read(self):
         while True:
-            data = await self.forwarder_r.read(self.__max_datalen)
+            try:
+                data = await self.forwarder_r.read(self.__max_datalen)
+            except ConnectionResetError:
+                self.log.error('[Server] connection reset...')
+                await self.cleanup(server=True)
+                return
             self.log.debug(data)
             if data == b'':
                 break
