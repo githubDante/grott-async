@@ -2,7 +2,7 @@ import inspect
 import os
 from importlib import import_module
 from logging import getLogger
-from .plugin import GrottProxySyncPlugin, GrottProxyAsyncPlugin
+from grott_async.extras.plugin import GrottProxySyncPlugin, GrottProxyAsyncPlugin
 
 log = getLogger('grott')
 
