@@ -25,7 +25,7 @@ Build on top of asyncio.
     grott-proxy [-c <config.ini>] [-w <work_dir>]
 
 
-* Plugins - async & sync. Must be an instance of **GrottProxyASyncPlugin** or **GrottProxySyncPlugin** respectively. The plugin file must be placed in directory *plugins* relative to the working path (*-w* command switch or the directory from which *grott-proxy* is called). The variable in the file doesn't matter as long as it is unique for the respective plugin type. The data method of the class will be called with each data packet from every datalogger.
+* Plugins - async & sync. Each plugin must be an instance of **GrottProxyASyncPlugin** or **GrottProxySyncPlugin**. The plugin file must be placed in directory *plugins* relative to the working path (*-w* command switch or the directory from which *grott-proxy* is called). The variable in the file doesn't matter as long as it is unique for the respective plugin type. The data method of the class will be called with each data packet from every datalogger.
 
   - sync example:
 
