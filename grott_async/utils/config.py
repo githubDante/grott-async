@@ -1,5 +1,6 @@
 from configparser import ConfigParser
 from typing import Dict, List
+from ._dyn_loader import GrottPluginLoader
 
 
 class _Sections:
@@ -51,6 +52,7 @@ class GrottProxyConfig:
         self._has_mqtt = False
         self._has_dtc = False
         self.__parse()
+        self.plugins: GrottPluginLoader = None  # noqa
 
     def __parse(self):
         self.parser.read(self._file)
@@ -123,6 +125,14 @@ class GrottProxyConfig:
                 return self.parser.getboolean(section, option)
             return self.parser.get(section, option)
         return default
+
+    def load_plugins(self):
+        """
+        Load all plugins from the plugins dir.
+
+        The plugin loader uses a logger, so we call it after the logger setup
+        """
+        self.plugins = GrottPluginLoader()
 
     def __str__(self):
         base = f'''

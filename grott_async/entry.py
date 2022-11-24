@@ -20,8 +20,10 @@ def async_proxy():
         print(f'Switching to dir: {options.work_dir}')
         os.chdir(dir)
 
+    """ Parse the INI file, load all dynamic plugins and start the main loop """
     config = GrottProxyConfig(options.config)
     logger = GrottLogger(output=config.log_to, level=config.log_level, fname=config.log_file)
+    config.load_plugins()
     log = logging.getLogger('grott')
     log.debug(config)
     proxy = AsyncProxyServer(config)
