@@ -45,7 +45,7 @@ class AsyncProxyServer:
         loop = asyncio.get_running_loop()
         cl_task = loop.create_task(cl.run())
         self.tasks.update({cl.peername: cl_task})
-        log.debug(f'[GrottProxyServer] Current clients: {len(self.tasks)}')
+        log.info(f'[GrottProxyServer] Current clients: {len(self.tasks)}')
 
     def proxy_info(self, *args, **kwargs):
         log.info('--- Current clients report ---')
@@ -88,7 +88,7 @@ class AsyncProxyServer:
         self.tasks.pop(sock_name)
         self.clients.pop(sock_name)
         log.debug(f'[GrottProxyServer] Cleared {sock_name}')
-        log.debug(f'[GrottProxyServer] Remaining: {self.tasks}')
+        log.debug(f'[GrottProxyServer] Remaining clients: {len(self.tasks)}')
 
 
 class ProxyClient:
