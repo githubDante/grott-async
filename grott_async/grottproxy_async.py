@@ -150,7 +150,11 @@ class ProxyClient:
     async def client_read(self):
         while True:
             try:
-                data = await self.reader.read(self.__max_datalen)
+                data = await asyncio.wait_for(self.reader.read(self.__max_datalen), timeout=15*60)
+            except TimeoutError:
+                self.log.error('[Client] read timeout. No data for 15 minutes')
+                await self.cleanup(client=True)
+                return
             except ConnectionResetError:
                 self.log.error('[Client] connection reset...')
                 await self.cleanup(client=True)
