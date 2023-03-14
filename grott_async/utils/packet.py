@@ -107,9 +107,7 @@ def decrypt(packet: bytes) -> bytes:
     :return: Decrypted packet
     :rtype: bytes
     """
-    if not grott_crc_ok(packet):
-        if __DEBUG__:
-            print('CRC check failed!!!')
+
     packet = bytearray(packet)
     unmask = cycle(GrottConstants.MASK)
 
@@ -237,7 +235,7 @@ class GrottRawPacket:
         Datalogger:     {self.datalogger_serial}
         Inverter:       {self.inverter_serial}
         ----------------------------------------
-        {self.decrypted_packet()}
+        {self.packet}
         
         ----
         
