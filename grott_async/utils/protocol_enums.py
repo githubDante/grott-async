@@ -30,8 +30,8 @@ class Fault1(int, enum.Enum):
     Error_121 = 22
     Error_123 = 23
     Auto_Test_Failed = 24
-    No_AC_Connection = 25
-    PV_Isolation_Low = 26
+    No_AC_Connection = 302
+    PV_Isolation_Low = 203
     Residual_I_High  = 27
     Output_High_DCI  = 28
     PV_Voltage_High  = 29

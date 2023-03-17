@@ -137,7 +137,7 @@ class ProxyClient:
         try:
             self.forwarder_r, self.forwarder_w = await asyncio.open_connection(self.config.growatt_srv,
                                                                                self.config.growatt_port)
-        except ConnectionRefusedError:
+        except (ConnectionRefusedError, TimeoutError):
             self.log.error(f'Cannot connect to {self.__remote_host}. Forwarding refused for {self.peername}')
             """ Do not schedule anything. Cleanup this client from the server """
             await self.server.client_done_cb(self.peername)
@@ -150,7 +150,11 @@ class ProxyClient:
     async def client_read(self):
         while True:
             try:
-                data = await self.reader.read(self.__max_datalen)
+                data = await asyncio.wait_for(self.reader.read(self.__max_datalen), timeout=15*60)
+            except TimeoutError:
+                self.log.error('[Client] read timeout. No data for 15 minutes')
+                await self.cleanup(client=True)
+                return
             except ConnectionResetError:
                 self.log.error('[Client] connection reset...')
                 await self.cleanup(client=True)
@@ -296,7 +300,7 @@ class ProxyClient:
                         value = k.format(parsed.long_at(k.id))
                     extracted['values'].update({k.description: value})
                 if json.__name__ == 'orjson':
-                    self.log.debug(json.dumps(extracted, option=json.OPT_INDENT_2))
+                    self.log.debug(json.dumps(extracted, option=json.OPT_INDENT_2).decode())  # noqa
                 else:
                     self.log.debug(json.dumps(extracted, indent=2))
                 loop = asyncio.get_running_loop()
