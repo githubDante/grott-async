@@ -26,14 +26,15 @@ class RegisterReq:
     """
     Base
     """
-    def __init__(self, logger_sn: Union[str, bytes], address: int, reg_length: int = 1):
-        self.seq_no = random.randint(1, 255)  #
+    def __init__(self, logger_sn: Union[str, bytes], address: int, data: int = None):
+        #self.seq_no = random.randint(1, 255)  #
+        self.seq_no = 1  # Always one seems OK
         self.datalen = 0  # Calculated on call to struct
         self.proto_ver = 0  # Override this in a subclass
         self.packet_type: GrottPacketType = GrottPacketType.UNKNOWN  # Override in subclass
         self.logger_sn = logger_sn
         self.address = address
-        self.reg_len = reg_length
+        self.reg_data = data  # When generating REGISTER_SET request
         self.data_sep = 1
 
     def struct(self) -> bytes:
@@ -46,15 +47,26 @@ class RegisterReq:
         serial = self.logger_sn if isinstance(self.logger_sn, bytes) else self.logger_sn.encode()
         datasep = struct.pack(f'>{self.data_sep*"B"}', *[0 for x in range(0, self.data_sep)])
         address = struct.pack('>H', self.address)
-        registers_requested = struct.pack('>H', self.reg_len)
-        packet_len = len(serial) + len(datasep) + len(address) + len(registers_requested) + 2
+        #registers_requested = struct.pack('>H', self.reg_len)
+        data = struct.pack('>H', self.reg_data) if self.reg_data else None
+        """ The format of requests generated through server.growatt.com is starting address:end address """
+        if data:
+            packet_len = len(serial) + len(datasep) + len(address) + len(data) + 2
+        else:
+            packet_len = len(serial) + len(datasep) + len(address) * 2 + 2
         packet_len = struct.pack('>H', packet_len)
 
         if self.proto_ver in [5, 6]:
             """ Protocol versions 5 & 6 needs to be encrypted / masked """
-            packet = seq_no + proto + packet_len + packet_t + encrypt(serial + datasep + address + registers_requested)
+            if data:
+                packet = seq_no + proto + packet_len + packet_t + encrypt(serial + datasep + address + data)
+            else:
+                packet = seq_no + proto + packet_len + packet_t + encrypt(serial + datasep + address + address)
         else:
-            packet = seq_no + proto + packet_len + packet_t + serial + datasep + address + registers_requested
+            if data:
+                packet = seq_no + proto + packet_len + packet_t + serial + datasep + address + data
+            else:
+                packet = seq_no + proto + packet_len + packet_t + serial + datasep + address + address
 
         crc = struct.pack('>H', modbus(packet))
         return packet + crc
@@ -64,16 +76,16 @@ class SetHoldingV5(RegisterReq):
     """ Set a value to a _single_ holding register protocol version 5 """
 
     def __init__(self, logger_sn, address, value):
-        super(SetHoldingV5, self).__init__(logger_sn, address, reg_length=value)
+        super(SetHoldingV5, self).__init__(logger_sn, address, data=None)
         self.proto_ver = 5
         self.packet_type = GrottPacketType.REGISTER_SET
-        self.data_sep = 1
+        self.data_sep = 0  # No idea why, but there is no offset in V5 when setting a register
 
 
 class ReadHoldingV5(RegisterReq):
 
-    def __init__(self, logger_sn, address, reg_len):
-        super(ReadHoldingV5, self).__init__(logger_sn, address, reg_length=reg_len)
+    def __init__(self, logger_sn, address):
+        super(ReadHoldingV5, self).__init__(logger_sn, address, data=None)
         self.proto_ver = 5
         self.packet_type = GrottPacketType.REGISTER_READ
         self.data_sep = 1
@@ -82,15 +94,15 @@ class ReadHoldingV5(RegisterReq):
 class SetHoldingV6(RegisterReq):
     """ Set a value to a _single_ holding register """
     def __init__(self, logger_sn, address, value):
-        super(SetHoldingV6, self).__init__(logger_sn, address, reg_length=value)
+        super(SetHoldingV6, self).__init__(logger_sn, address, data=value)
         self.proto_ver = 6
         self.packet_type = GrottPacketType.REGISTER_SET
         self.data_sep = 20
 
 
 class ReadHoldingV6(RegisterReq):
-    def __init__(self, logger_sn, address, reg_len):
-        super(ReadHoldingV6, self).__init__(logger_sn, address, reg_length=reg_len)
+    def __init__(self, logger_sn, address, value):
+        super(ReadHoldingV6, self).__init__(logger_sn, address, data=value)
         self.proto_ver = 6
         self.packet_type = GrottPacketType.REGISTER_READ
         self.data_sep = 20
