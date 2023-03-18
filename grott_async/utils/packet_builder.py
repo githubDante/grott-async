@@ -76,7 +76,7 @@ class SetHoldingV5(RegisterReq):
     """ Set a value to a _single_ holding register protocol version 5 """
 
     def __init__(self, logger_sn, address, value):
-        super(SetHoldingV5, self).__init__(logger_sn, address, data=None)
+        super(SetHoldingV5, self).__init__(logger_sn, address, data=value)
         self.proto_ver = 5
         self.packet_type = GrottPacketType.REGISTER_SET
         self.data_sep = 0  # No idea why, but there is no offset in V5 when setting a register
@@ -101,8 +101,8 @@ class SetHoldingV6(RegisterReq):
 
 
 class ReadHoldingV6(RegisterReq):
-    def __init__(self, logger_sn, address, value):
-        super(ReadHoldingV6, self).__init__(logger_sn, address, data=value)
+    def __init__(self, logger_sn, address):
+        super(ReadHoldingV6, self).__init__(logger_sn, address, data=None)
         self.proto_ver = 6
         self.packet_type = GrottPacketType.REGISTER_READ
         self.data_sep = 20
