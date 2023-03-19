@@ -106,9 +106,6 @@ class AsyncProxyServer:
             return cl[0]
 
 
-
-
-
 class ProxyClient:
     """
     Async client
@@ -142,6 +139,7 @@ class ProxyClient:
         self.proto_version = 0
         self.log = log
         self._waiting_local = Event()
+        self.local_cmd_queue = asyncio.Queue(maxsize=1)
 
     def _exc_handler(self, loop, context):
         self.log.exception(f'Client error... {loop} -> {context}')
@@ -170,9 +168,9 @@ class ProxyClient:
     async def client_read(self):
         while True:
             try:
-                data = await asyncio.wait_for(self.reader.read(self.__max_datalen), timeout=15*60)
-            except TimeoutError:
-                self.log.error('[Client] read timeout. No data for 15 minutes')
+                data = await asyncio.wait_for(self.reader.read(self.__max_datalen), timeout=10*60)
+            except asyncio.TimeoutError:
+                self.log.error('[Client] read timeout. No data for 10 minutes')
                 await self.cleanup(client=True)
                 return
             except ConnectionResetError:
@@ -191,6 +189,10 @@ class ProxyClient:
             if self._waiting_local.is_set():
                 self.log.debug('Response of a locally generated command. Forwarding refused.')
                 self._waiting_local.clear()
+                try:
+                    self.local_cmd_queue.put_nowait(data)
+                except:
+                    pass
                 continue
             self.msg_count += 1
             self.forwarder_w.write(data)
@@ -351,6 +353,8 @@ class ProxyClient:
         self.log = logging.getLogger(f'grott-{self.logger_serial}')
 
     async def send_local_command(self, command: bytes):
+        self.log.debug('Sending locally generated command')
+        self.log.debug(GrottRawPacket(command))
         self.writer.write(command)
         self._waiting_local.set()
         await self.writer.drain()
