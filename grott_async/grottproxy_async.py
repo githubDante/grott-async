@@ -14,11 +14,13 @@ from time import perf_counter
 from asyncio.streams import StreamReader, StreamWriter
 from asyncio.base_events import Server
 from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Event
 from typing import Dict
 from .utils.logger import GrottLogger
 from .utils import (GrottProxyConfig, GrottDataExtractor, GrottPacketType, GrottRawPacket, RegType,
                     map_03_125, map_03_45, map_04_45, map_04_125)
 from .extras.mqtt import send_to_mqtt
+from .extras.command_socket import GrottCMDSocket
 
 log = logging.getLogger('grott')
 
@@ -32,6 +34,7 @@ class AsyncProxyServer:
         self.clients: Dict[tuple, ProxyClient] = {}
         self.host = self.config.listen_address
         self.port = self.config.listen_port
+        self.cmd_receiver = GrottCMDSocket(self)
 
     async def proxy_factory(self, reader: StreamReader, writer: StreamWriter):
         """
@@ -77,6 +80,7 @@ class AsyncProxyServer:
         loop.add_signal_handler(signal.SIGUSR1, self.proxy_info)
         loop.add_signal_handler(signal.SIGINT, self.stop_server)
         loop.set_exception_handler(self._server_exception)
+        loop.create_task(self.cmd_receiver.start())
         async with self.server:
             try:
                 await self.server.serve_forever()
@@ -89,6 +93,17 @@ class AsyncProxyServer:
         self.clients.pop(sock_name)
         log.debug(f'[GrottProxyServer] Cleared {sock_name}')
         log.debug(f'[GrottProxyServer] Remaining clients: {len(self.tasks)}')
+
+    def list_clients(self):
+        clients = []
+        for cl in self.clients.values():
+            clients.append((cl.logger_serial, cl.inverter_serial, cl.proto_version))
+        return clients
+
+    def get_client(self, logger_id: str):
+        cl = [x for x in self.clients.values() if x.logger_serial == logger_id]
+        if len(cl) == 1:
+            return cl[0]
 
 
 class ProxyClient:
@@ -121,7 +136,10 @@ class ProxyClient:
         self.device_code = None
         self.logger_serial = ''
         self.inverter_serial = ''
+        self.proto_version = 0
         self.log = log
+        self._waiting_local = Event()
+        self.local_cmd_queue = asyncio.Queue(maxsize=1)
 
     def _exc_handler(self, loop, context):
         self.log.exception(f'Client error... {loop} -> {context}')
@@ -150,9 +168,9 @@ class ProxyClient:
     async def client_read(self):
         while True:
             try:
-                data = await asyncio.wait_for(self.reader.read(self.__max_datalen), timeout=15*60)
-            except TimeoutError:
-                self.log.error('[Client] read timeout. No data for 15 minutes')
+                data = await asyncio.wait_for(self.reader.read(self.__max_datalen), timeout=10*60)
+            except asyncio.TimeoutError:
+                self.log.error('[Client] read timeout. No data for 10 minutes')
                 await self.cleanup(client=True)
                 return
             except ConnectionResetError:
@@ -168,6 +186,14 @@ class ProxyClient:
                 self.log.debug(f'Data causing the error: {data}')
                 await self.cleanup(client=True)
                 return
+            if self._waiting_local.is_set():
+                self.log.debug('Response of a locally generated command. Forwarding refused.')
+                self._waiting_local.clear()
+                try:
+                    self.local_cmd_queue.put_nowait(data)
+                except:
+                    pass
+                continue
             self.msg_count += 1
             self.forwarder_w.write(data)
             await self.forwarder_w.drain()
@@ -254,6 +280,8 @@ class ProxyClient:
                 self._setup_own_logger()
         if self.inverter_serial == '':
             self.inverter_serial = packet.inverter_serial.decode()
+        if self.proto_version == 0:
+            self.proto_version = packet.protocol_version
         if packet.packet_type in [GrottPacketType.INVERTER_REPORT, GrottPacketType.LIVE_DATA,
                                   GrottPacketType.BUFFERED_DATA] \
                 and packet.data_length > 100:
@@ -323,6 +351,14 @@ class ProxyClient:
                                 logger_name=f'grott-{self.logger_serial}', level=self.config.log_level, keep=1)
 
         self.log = logging.getLogger(f'grott-{self.logger_serial}')
+
+    async def send_local_command(self, command: bytes):
+        self.log.debug('Sending locally generated command')
+        self.log.debug(GrottRawPacket(command))
+        self.writer.write(command)
+        self._waiting_local.set()
+        await self.writer.drain()
+
 
     def __repr__(self):
         return f'<{self.__class__.__name__}({self.peername})> cl_msgs: {self.msg_count} | srv_msgs: {self.fwd_count}'

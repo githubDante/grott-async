@@ -1,5 +1,5 @@
 Growatt/Grott proxy (async)
-=================================
+#################################
 
 Build on top of asyncio.
 
@@ -9,6 +9,7 @@ Build on top of asyncio.
   - DTC (device type code) filter (optional)
   - logging - log levels: debug, info, error etc.
   - logging options: stdout/file
+  - **command socket (see below)**
   - separate log file per datalogger/inverter (when logging to file)
   - datalogger session
   - server stats (on signal.SIGUSR1/kill -10)
@@ -49,5 +50,30 @@ Build on top of asyncio.
                 self.show_data(parsed_data)
 
         cool_plugin_name = MyPlugin(1, 2, 3)
+
+Command Socket
+=======================================
+
+The proxy will create a listener (AF_INET, SOCK_STREAM) on 127.0.0.1:15279. The following commands are accepted:
+
+ - list - list all data loggers currently connected to the proxy
+ - read <logger serial> <register address> - read a specific register of a given data logger / inverter
+ - set <logger serial> <register address> <register value> - set a value in specific register of a given inverter
+
+Responses are returned by all commands. The responses from the inverter are filtered i.e. they are
+processed only by the proxy without being forwarded to the Growatt servers.
+
+Examples:
+
+.. code-block:: console
+
+    ~ # telnet 127.0.0.1 15279
+    Trying 127.0.0.1...
+    Connected to 127.0.0.1.
+    Escape character is '^]'.
+    list
+    XGD1821A81 | RJE3A22419 | 6
+    read XGD1821A81 0
+    Reg: 0 Value: 1
 
 
