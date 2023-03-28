@@ -60,7 +60,8 @@ The proxy will create a listener (AF_INET, SOCK_STREAM) on 127.0.0.1:15279. The 
  - read <logger serial> <register address> - read a specific register of a given data logger / inverter
  - set <logger serial> <register address> <register value> - set a value in specific register of a given inverter
 
-Responses are returned by all commands.
+Responses are returned by all commands. The responses from the inverter are filtered i.e. they are
+processed only by the proxy without being forwarded to the Growatt servers.
 
 Examples:
 
