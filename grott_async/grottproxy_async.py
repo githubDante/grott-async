@@ -180,13 +180,15 @@ class ProxyClient:
             if data == b'':
                 break
             try:
-                await self.process_client_data(data)
+                packet_raw = GrottRawPacket(data)
+                await self.process_client_data(packet_raw)
             except Exception as e:
                 self.log.exception(f'Client data error. Closing due to: {e} ')
                 self.log.debug(f'Data causing the error: {data}')
                 await self.cleanup(client=True)
                 return
-            if self._waiting_local.is_set():
+            if self._waiting_local.is_set() and packet_raw.packet_type in [GrottPacketType.REGISTER_READ,
+                                                                           GrottPacketType.REGISTER_SET]:
                 self.log.debug('Response of a locally generated command. Forwarding refused.')
                 self._waiting_local.clear()
                 try:
@@ -262,12 +264,11 @@ class ProxyClient:
         self.log.debug(f'*** SRV PACKET PROCESSED [{round((perf_counter() - _start_processing) * 1000, 3)}ms]***')
         return
 
-    async def process_client_data(self, data: bytes) -> None:
+    async def process_client_data(self, packet: GrottRawPacket) -> None:
         """ To be implemented
             Async in case that the processing needs async code
         """
         _start_processing = perf_counter()
-        packet = GrottRawPacket(data)
         self.log.debug(packet)
         if packet.valid_crc is False:
             self.log.error('CRC check failed. Packet not processed!!!')
