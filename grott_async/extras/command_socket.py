@@ -6,7 +6,6 @@ from logging import getLogger
 import struct
 from grott_async.utils.packet_builder import ReadHoldingV5, ReadHoldingV6, SetHoldingV5, SetHoldingV6
 from grott_async.utils.packet import GrottRawPacket
-from grott_async.grottproxy_async import ProxyClient
 
 log = getLogger('grott')
 
@@ -58,7 +57,7 @@ class GrottCMDSocket:
         """
         return self.proxy.list_clients()
 
-    def get_client(self, logger_sn: str) -> ProxyClient:
+    def get_client(self, logger_sn: str):
         """
         Get a ProxyClient object from the server
 
@@ -85,8 +84,11 @@ class CMDSockClient:
         while True:
             try:
                 data = await asyncio.wait_for(self.reader.read(1024), 30)
-                command_res = await self._command_body(data)
-                print(data)
+                try:
+                    command_res = await self._command_body(data)
+                except Exception as e:
+                    log.debug(f'Client data error: {e}. Will disconnect this one...')
+                    break
                 if command_res:
                     self.writer.write(command_res)
                     #self.writer.write(data)
